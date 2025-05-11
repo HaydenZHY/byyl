@@ -297,8 +297,8 @@ void perform_lexical_analysis(const char* input_file_path, FA resulting_dfa, std
                                 }
                             }
                             if (!lookahead_transition_exists || !resulting_dfa.final.count(lookahead_state)){
-                                std::cout << accumulated_token_string << "\t" << tokenize(current_automaton_state, accumulated_token_string, resulting_dfa) << std::endl;
-                                tokens_output_file << accumulated_token_string << "\t" << tokenize(current_automaton_state, accumulated_token_string, resulting_dfa) << std::endl;
+                                std::cout << accumulated_token_string << " " << tokenize(current_automaton_state, accumulated_token_string, resulting_dfa) << std::endl;
+                                tokens_output_file << accumulated_token_string << " " << tokenize(current_automaton_state, accumulated_token_string, resulting_dfa) << std::endl;
                                 build_table(current_automaton_state, accumulated_token_string, resulting_dfa);
                                 current_automaton_state = *resulting_dfa.start.begin();
                                 accumulated_token_string = "";
