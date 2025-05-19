@@ -2,7 +2,6 @@ from init import GrammarProcessor
 from calculate import CalculateSets
 from table import LL1TableGenerator
 
-
 class SyntaxAnalyzer:
     def __init__(self, grammar_processor, calculate_sets, ll1_table_generator):
         self.grammar_processor = grammar_processor
@@ -13,6 +12,7 @@ class SyntaxAnalyzer:
         self.type_sets = set()
 
     def get_tokens(self, file_name):
+        self.tokens = []  #清空旧的 token
         with open(file_name, 'r') as file:
             for line in file:
                 # 假设每行的格式为 'token <type,value>'
@@ -30,50 +30,49 @@ class SyntaxAnalyzer:
                 # self.tokens.append(token)
             self.tokens.append("EOF")
 
-    def grammar_analysis(self, dir):
-        with open(dir, 'w') as out:
-            self.sym_stack.append("#")
-            self.sym_stack.append(self.grammar_processor.start)
-            index = 0
-            a = self.tokens[index]
-            flag = True
-            step = 1  # 添加步骤计数器
+    def grammar_analysis(self, output_path):
+        with open(output_path, 'w') as file:
+            stack = ['#', self.grammar_processor.start]  # 初始化分析栈
+            token_index = 0
+            current_token = self.tokens[token_index]
+            analysis_active = True
+            action_count = 1  # 步骤编号
 
-            while flag:
-                X = self.sym_stack[-1]
+            while analysis_active:
+                X = stack[-1]  # 获取栈顶符号
 
-                if X == "EOF":
-                    if X == a:
-                        out.write(f"{step}\tEOF#EOF\taccept\n")
-                        flag = False
+                if X == 'EOF':
+                    if current_token == X:
+                        file.write(f"{action_count}\tEOF#{current_token}\taccept\n")
                     else:
-                        out.write(f"{step}\t{X}#{a}\terror\n")
-                        flag = False
-                elif self.calculate_sets.is_terminal(X) or X == 'ε':  # 处理空字符串
-                    if X == a or X == 'ε':
-                        action = "move" if X != 'ε' else "reduction"  # 对空字符串进行规约
-                        out.write(f"{step}\t{X}#{a}\t{action}\n")
-                        if X != 'ε':  # 如果不是空字符串，则移动输入指针
-                            index += 1
-                            a = self.tokens[index] if index < len(
-                                self.tokens) else "#"
-                        self.sym_stack.pop()
+                        file.write(f"{action_count}\t{X}#{current_token}\terror\n")
+                    break
+
+                elif self.calculate_sets.is_terminal(X) or X == 'ε':
+                    if X == current_token or X == 'ε':
+                        action = "reduction" if X == 'ε' else "move"
+                        file.write(f"{action_count}\t{X}#{current_token}\t{action}\n")
+                        if X != 'ε':
+                            token_index += 1
+                            current_token = self.tokens[token_index] if token_index < len(self.tokens) else '#'
+                        stack.pop()
                     else:
-                        out.write(f"{step}\t{X}#{a}\terror\n")
-                        flag = False
+                        file.write(f"{action_count}\t{X}#{current_token}\terror\n")
+                        break
+
                 elif self.calculate_sets.is_non_terminal(X):
-                    key = (X, a)
-                    if key in self.ll1_table_generator.table and self.ll1_table_generator.table[key]:
-                        prod = self.ll1_table_generator.table[key][0].split()
-                        self.sym_stack.pop()
-                        if prod != ['ε']:  # 不是空产生式
-                            for t in reversed(prod):
-                                self.sym_stack.append(t)
-                        out.write(f"{step}\t{X}#{a}\treduction\n")
+                    parsing_key = (X, current_token)
+                    if parsing_key in self.ll1_table_generator.table and self.ll1_table_generator.table[parsing_key]:
+                        production = self.ll1_table_generator.table[parsing_key][0].split()
+                        stack.pop()
+                        if production != ['ε']:
+                            stack.extend(reversed(production))
+                        file.write(f"{action_count}\t{X}#{current_token}\treduction\n")
                     else:
-                        out.write(f"{step}\t{X}#{a}\terror\n")
-                        flag = False
-                step += 1  # 步骤计数器递增
+                        file.write(f"{action_count}\t{X}#{current_token}\terror\n")
+                        break
+
+                action_count += 1
 
 
 # 使用示例

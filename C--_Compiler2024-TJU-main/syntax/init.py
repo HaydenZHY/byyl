@@ -1,6 +1,5 @@
 import re
 
-
 class GrammarProcessor:
     def __init__(self):
         self.start = "Program"  # 开始符
@@ -8,7 +7,6 @@ class GrammarProcessor:
         self.non_terminals = set()  # 非终结符集合
         self.terminals = set()  # 终结符集合
         self.nullable_non_terminals = set()  # 可空的非终结符集合
-
 
     def read_grammar(self, file_name):
         with open(file_name, 'r', encoding='utf-8') as file:
@@ -163,6 +161,7 @@ class GrammarProcessor:
 # 使用示例
 if __name__ == "__main__":
     grammar_processor = GrammarProcessor()
-    grammar_processor.process_grammar_ref("grammar_ref.txt")
+    # grammar_processor.process_grammar_ref("grammar_ref.txt")
+    grammar_processor.process_grammar("grammar.txt")
     grammar_processor.print_terminals()
     grammar_processor.print_non_terminals()

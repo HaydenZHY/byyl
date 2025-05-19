@@ -1,6 +1,5 @@
 from init import GrammarProcessor
 
-
 class CalculateSets:
     def __init__(self, grammar_processor):
         self.grammar_processor = grammar_processor
@@ -26,10 +25,20 @@ class CalculateSets:
             if symbol != "ε" and symbol not in target_set:
                 target_set.add(symbol)
                 self.changed = True
+                
+    def first_has_empty(self, symbol):
+        return "ε" in self.first_sets.get(symbol, set())
 
     def compute_first_set_for_nonter(self, non_terminal):
         for production in self.grammar_processor.productions[non_terminal]:
             tokens = production.split()
+            # 关键点：直接处理 ε 产生式
+            if tokens == ["ε"]:
+                if "ε" not in self.first_sets[non_terminal]:
+                    self.first_sets[non_terminal].add("ε")
+                    self.changed = True
+                continue
+            
             empty_flag = True
             for token in tokens:
                 if self.is_terminal(token):
@@ -39,7 +48,7 @@ class CalculateSets:
                 elif self.is_non_terminal(token):
                     self.add_symbols_without_empty(
                         self.first_sets[non_terminal], self.first_sets[token])
-                    if not self.has_empty(token):
+                    if not self.first_has_empty(token) and not self.has_empty(token):
                         empty_flag = False
                         break
             if empty_flag:
@@ -73,7 +82,7 @@ class CalculateSets:
                         if self.is_non_terminal(token):
                             self.add_symbols_without_empty(
                                 self.follow_sets[token], follow_temp)
-                            if self.has_empty(token):
+                            if self.first_has_empty(token):
                                 follow_temp = follow_temp.union(
                                     self.first_sets[token])
                                 follow_temp.discard("ε")
@@ -116,6 +125,7 @@ class CalculateSets:
 if __name__ == "__main__":
     grammar_processor = GrammarProcessor()
     grammar_processor.process_grammar_ref("grammar_ref.txt")
+    # grammar_processor.process_grammar("grammar.txt")
     calculate_sets = CalculateSets(grammar_processor)
     calculate_sets.calculate()
     calculate_sets.print_sets()
